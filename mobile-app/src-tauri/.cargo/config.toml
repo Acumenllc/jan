@@ -1,0 +1,13 @@
+[target.aarch64-apple-ios-sim]
+linker = "clang"
+rustflags = [
+  "-C", "link-arg=-target",
+  "-C", "link-arg=aarch64-apple-ios13.0-simulator",
+]
+
+[target.x86_64-apple-ios]
+linker = "clang"
+rustflags = [
+  "-C", "link-arg=-target", 
+  "-C", "link-arg=x86_64-apple-ios13.0-simulator",
+]

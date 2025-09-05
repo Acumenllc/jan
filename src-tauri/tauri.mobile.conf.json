@@ -1,0 +1,69 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Jan Mobile",
+  "version": "0.6.599",
+  "identifier": "jan.ai.mobile",
+  "build": {
+    "frontendDist": "../mobile-app/dist",
+    "devUrl": "http://localhost:1421",
+    "beforeDevCommand": "cross-env IS_TAURI=true yarn dev:mobile",
+    "beforeBuildCommand": "cross-env IS_TAURI=true yarn build:mobile"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Jan Mobile",
+        "width": 375,
+        "height": 812,
+        "resizable": false,
+        "fullscreen": false,
+        "center": true,
+        "decorations": false
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self' customprotocol: asset:",
+        "connect-src": "ipc: http://ipc.localhost https: http:",
+        "font-src": [
+          "https://fonts.gstatic.com blob: data: tauri://localhost"
+        ],
+        "img-src": "'self' asset: blob: data: https:",
+        "style-src": "'unsafe-inline' 'self' https://fonts.googleapis.com",
+        "script-src": "'self' asset:"
+      },
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "requireLiteralLeadingDot": false,
+          "allow": ["**/*"]
+        }
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["android", "ios"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": ["resources/LICENSE"],
+    "android": {
+      "minSdkVersion": 24
+    },
+    "iOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "13.0"
+    }
+  },
+  "plugins": {
+    "os": {
+      "version": "latest"
+    }
+  }
+}

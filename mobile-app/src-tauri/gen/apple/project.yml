@@ -1,0 +1,105 @@
+name: jan-mobile
+options:
+  bundleIdPrefix: jan.ai.mobile
+  deploymentTarget:
+    iOS: 13.0
+fileGroups: [../../src]
+configs:
+  debug: debug
+  release: release
+settingGroups:
+  app:
+    base:
+      PRODUCT_NAME: Jan Mobile
+      PRODUCT_BUNDLE_IDENTIFIER: jan.ai.mobile
+targetTemplates:
+  app:
+    type: application
+    sources:
+      - path: Sources
+    scheme:
+      environmentVariables:
+        RUST_BACKTRACE: full
+        RUST_LOG: info
+    settings:
+      groups: [app]
+targets:
+  jan-mobile_iOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Assets.xcassets
+      - path: jan-mobile_iOS
+      - path: assets
+        buildPhase: resources
+        type: folder
+      - path: LaunchScreen.storyboard
+    info:
+      path: jan-mobile_iOS/Info.plist
+      properties:
+        LSRequiresIPhoneOS: true
+        UILaunchStoryboardName: LaunchScreen
+        UIRequiredDeviceCapabilities: [arm64, metal]
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        CFBundleShortVersionString: 0.6.6
+        CFBundleVersion: "0.6.6"
+    entitlements:
+      path: jan-mobile_iOS/jan-mobile_iOS.entitlements
+    scheme:
+      environmentVariables:
+        RUST_BACKTRACE: full
+        RUST_LOG: info
+    settings:
+      base:
+        ENABLE_BITCODE: false
+        ARCHS: [arm64]
+        VALID_ARCHS: arm64 
+        LIBRARY_SEARCH_PATHS: $(inherited) $(PROJECT_DIR)/Externals/arm64/Debug $(PROJECT_DIR)/Externals/arm64/Release $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)
+        OTHER_LDFLAGS: -lapp
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: true
+        EXCLUDED_ARCHS[sdk=iphoneos*]: x86_64
+      groups: [app]
+    dependencies:
+      - sdk: CoreGraphics.framework
+      - sdk: Metal.framework
+      - sdk: MetalKit.framework
+      - sdk: QuartzCore.framework
+      - sdk: Security.framework
+      - sdk: UIKit.framework
+      - sdk: WebKit.framework
+    preBuildScripts:
+      - script: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          cd ../../../src-tauri
+          unset RUSTC_WRAPPER
+          
+          # Set iOS SDK environment variables
+          export IPHONEOS_DEPLOYMENT_TARGET=13.0
+          export CC_aarch64_apple_ios_sim=clang
+          export CXX_aarch64_apple_ios_sim=clang++
+          export CFLAGS_aarch64_apple_ios_sim="-target aarch64-apple-ios13.0-simulator -isysroot ${SDKROOT}"
+          export CARGO_TARGET_AARCH64_APPLE_IOS_SIM_LINKER=clang
+          export CARGO_TARGET_AARCH64_APPLE_IOS_SIM_RUSTFLAGS="-C link-arg=-target -C link-arg=aarch64-apple-ios13.0-simulator -C link-arg=-isysroot -C link-arg=${SDKROOT}"
+          
+          if [ "$CONFIGURATION" = "debug" ]; then
+            mkdir -p ../gen/apple/Externals/arm64/Debug
+            cargo build --target aarch64-apple-ios-sim --lib
+            cp target/aarch64-apple-ios-sim/debug/libapp.a ../gen/apple/Externals/arm64/Debug/libapp.a
+          else
+            mkdir -p ../gen/apple/Externals/arm64/Release
+            cargo build --target aarch64-apple-ios-sim --lib --release
+            cp target/aarch64-apple-ios-sim/release/libapp.a ../gen/apple/Externals/arm64/Release/libapp.a
+          fi
+        name: Build Rust Code
+        basedOnDependencyAnalysis: false
+        outputFiles:
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a
