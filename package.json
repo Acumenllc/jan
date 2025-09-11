@@ -28,7 +28,7 @@
     "build:mobile": "yarn workspace @janhq/mobile-app build",
     "mobile:android": "yarn workspace @janhq/mobile-app tauri:android",
     "mobile:ios": "yarn workspace @janhq/mobile-app tauri:ios",
-    "dev:tauri": "yarn build:icon && yarn copy:assets:tauri && cross-env IS_CLEAN=true tauri dev",
+    "dev:tauri": "yarn build:icon && yarn copy:assets:tauri && cross-env IS_CLEAN=true RUSTC_WRAPPER= tauri dev",
     "copy:assets:tauri": "cpx \"pre-install/*.tgz\" \"src-tauri/resources/pre-install/\" && cpx \"LICENSE\" \"src-tauri/resources/\"",
     "download:lib": "node ./scripts/download-lib.mjs",
     "download:bin": "node ./scripts/download-bin.mjs",
