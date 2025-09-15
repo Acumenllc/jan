@@ -28,6 +28,10 @@ Jan is a local AI assistant built as a cross-platform desktop app using Tauri (R
 
 ### Essential Commands
 
+# These commands are pre-configured to avoid sccache issues
+  RUSTC_WRAPPER= yarn mobile:ios
+  RUSTC_WRAPPER= cargo check
+
 **Development:**
 ```bash
 make dev                    # Full development setup and launch (recommended)

@@ -60,3 +60,7 @@ src-tauri/resources/
 ## test
 test-data
 llm-docs
+
+## AI tool
+.claude/
+mobile-app/gen/apple/Externals/arm64/Debug/libapp.a

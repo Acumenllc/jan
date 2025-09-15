@@ -4,6 +4,7 @@
   "version": "0.6.6",
   "type": "module",
   "scripts": {
+    "ios:iphone16": "react-native run-ios --simulator=\"iPhone 16 (iOS 18.6)\"",
     "dev": "vite --port 1422",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
@@ -28,8 +29,8 @@
     "@tabler/icons-react": "^3.33.0",
     "@tailwindcss/vite": "^4.1.4",
     "@tanstack/react-router": "^1.121.34",
-    "@tauri-apps/api": "^2.5.0",
-    "@tauri-apps/plugin-os": "^2.2.1",
+    "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/plugin-os": "^2.3.1",
     "class-variance-authority": "^0.7.1",
     "framer-motion": "^12.23.12",
     "i18next": "^25.0.1",
