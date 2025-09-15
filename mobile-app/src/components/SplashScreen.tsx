@@ -2,16 +2,18 @@ import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 interface SplashScreenProps {
-  onComplete: () => void
+  onComplete?: () => void
 }
 
-export function SplashScreen({ onComplete }: SplashScreenProps) {
+export function SplashScreen({ onComplete }: SplashScreenProps = {}) {
   const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(false)
-      setTimeout(onComplete, 300) // Wait for fade out animation
+      if (onComplete) {
+        setTimeout(onComplete, 300) // Wait for fade out animation
+      }
     }, 2000)
 
     return () => clearTimeout(timer)
