@@ -1,0 +1,41 @@
+---
+title: Reduce vLLM overhead with these magic flags
+description: NA
+tags: 
+categories: research
+ogImage: 
+date: 2025-09-25
+---
+
+import { Callout } from 'nextra/components'
+import CTABlog from '@/components/Blog/CTA'
+
+# Reduce vLLM overhead with these magic flags
+
+If you don't have much time, add `--compilation-config '{"cudagraph_mode":"FULL_AND_PIECEWISE","compile_sizes":[1]}' --async-scheduling` to your vLLM launch command, and you can close this tab. See you next time!
+
+If you are still here, let's talk about how we discovered some lesser known vLLM flags that can speed up your local LLM inference by up to 30%!
+
+## Background
+
+[vLLM](https://github.com/vllm-project/vllm) is one of the most established LLM inference serving frameworks. It includes the best known techniques for serving LLMs not only with single GPU, but also at large distributed scale. However, most of the efforts have been focusing on data center GPUs - think H100, B200, and MI300X. That leaves vLLM rather unoptimized for typical consumer hardware.
+
+On the journey to ensure vLLM runs as fast as possible on our fleet of RTX PRO 6000, we must be able to understand what is the **realistic theoretical limit** of serving a particular LLM model on a particular GPU. To do so, we build a **performance model** to predict the best possible metric we can get out of our hardware.
+
+## LLM performance model
+
+### Napkin math
+
+Before discussing the details of our perf model, we also want to provide you with a napkin-math version. To predict decode performance in terms of tok/s, you can take memory bandwidth and divide it by model size. Model size can be estimated by multiplying parameters count by 2 for BF16, or by 1 and 0.5 for INT8 and INT4 respectively. For example, you want to know the theoretical performance of running [Qwen3-4B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) on [RTX 4090](https://www.nvidia.com/en-us/geforce/graphics-cards/40-series/rtx-4090/). The GPU has 1000 GB/s VRAM bandwidth, and the model is estimated to be 4x2 = 8GB. The theoretical decode speed would be 1000 / 8 = 125 tok/s.
+
+This estimate is actually quite accurate for short context size, and as you can see later when we walk through the performance model. To get a slightly better estimate, you can also look up the HuggingFace repo which shows the exact repo size. In our case of Qwen3-4B-Instruct-2507, the repo size is 8.06 GB, so it's not that much difference from our times 2 rule.
+
+TODO: screenshot of HF
+
+The biggest problem with this approach is not taking into account the effect of long context - doing attention on a large KV cache takes time! It also doesn't predict the latency of **prefill** operation i.e. Time to First Token (TTFT). We aim to predict these metrics more accurately with our perf model!
+
+### 
+
+An LLM forward pass consists of a series of operations: matrix multiplication, attention, RMS norm, and so on. For simplicity, we only need to consider **matrix multiplication** and **attention** operations as they account for most of the runtime. 
+
+<CTABlog />
