@@ -73,9 +73,9 @@ export class WebProvidersService implements ProvidersService {
       runtimeProviders.push(provider)
     }
 
-    if (!PlatformFeatures[PlatformFeature.DEFAULT_PROVIDERS]) {
-      return runtimeProviders
-    }
+    // if (!PlatformFeatures[PlatformFeature.DEFAULT_PROVIDERS]) {
+    //   return runtimeProviders
+    // }
 
     const builtinProviders = predefinedProviders.map((provider) => {
       let models = provider.models as Model[]

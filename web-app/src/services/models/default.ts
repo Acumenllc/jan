@@ -22,8 +22,8 @@ import type {
   ModelPlan,
 } from './types'
 
-// TODO: Replace this with the actual provider later
-const defaultProvider = 'llamacpp'
+// Jan provider is now available across all platforms
+const defaultProvider = 'jan'
 
 export class DefaultModelsService implements ModelsService {
   private getEngine(provider: string = defaultProvider) {

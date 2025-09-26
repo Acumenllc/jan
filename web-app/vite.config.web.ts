@@ -61,6 +61,9 @@ export default defineConfig({
     POSTHOG_HOST: JSON.stringify(process.env.POSTHOG_HOST || ''),
     GA_MEASUREMENT_ID: JSON.stringify(process.env.GA_MEASUREMENT_ID),
     MODEL_CATALOG_URL: JSON.stringify(process.env.MODEL_CATALOG_URL || ''),
+
+    // Jan Provider API base URL for web extensions
+    JAN_API_BASE: JSON.stringify(process.env.JAN_API_BASE || 'https://api-dev.jan.ai/v1'),
   },
   server: {
     port: 3001,

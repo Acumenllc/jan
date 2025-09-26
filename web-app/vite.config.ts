@@ -30,14 +30,14 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
-    optimizeDeps: {
-      exclude: ['@jan/extensions-web'],
-    },
-    build: {
-      rollupOptions: {
-        external: ['@jan/extensions-web'],
-      },
-    },
+    // optimizeDeps: {
+    //   exclude: ['@jan/extensions-web'],
+    // },
+    // build: {
+    //   rollupOptions: {
+    //     external: ['@jan/extensions-web'],
+    //   },
+    // },
     define: {
       IS_TAURI: JSON.stringify(process.env.IS_TAURI),
       IS_DEV: JSON.stringify(process.env.IS_DEV),
@@ -70,6 +70,9 @@ export default defineConfig(({ mode }) => {
       AUTO_UPDATER_DISABLED: JSON.stringify(
         env.AUTO_UPDATER_DISABLED === 'true'
       ),
+
+      // Jan Provider API base URL for web extensions
+      JAN_API_BASE: JSON.stringify(env.JAN_API_BASE || 'https://api-dev.jan.ai/v1'),
     },
 
     // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
@@ -90,7 +93,7 @@ export default defineConfig(({ mode }) => {
         : undefined,
       watch: {
         // 3. tell vite to ignore watching `src-tauri`
-        ignored: ['**/src-tauri/**'],
+        // ignored: ['**/src-tauri/**'],
       },
     },
   }

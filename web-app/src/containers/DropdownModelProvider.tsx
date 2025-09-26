@@ -189,23 +189,22 @@ const DropdownModelProvider = ({
           }
         } else {
           // For web-only builds, auto-select the first model from jan provider
-          if (PlatformFeatures[PlatformFeature.WEB_AUTO_MODEL_SELECTION]) {
-            const janProvider = providers.find(
-              (p) => p.provider === 'jan' && p.active && p.models.length > 0
-            )
-            if (janProvider && janProvider.models.length > 0) {
-              const firstModel = janProvider.models[0]
-              selectModelProvider(janProvider.provider, firstModel.id)
-              return
-            }
+          
+          const janProvider = providers.find(
+            (p) => p.provider === 'jan' && p.active && p.models.length > 0
+          )
+          if (janProvider && janProvider.models.length > 0) {
+            const firstModel = janProvider.models[0]
+            selectModelProvider(janProvider.provider, firstModel.id)
+            return
           }
+          
           selectModelProvider('', '')
         }
       } else {
         // Get current state for web auto-selection check
         const currentState = { selectedModel, selectedProvider }
         if (
-          PlatformFeatures[PlatformFeature.WEB_AUTO_MODEL_SELECTION] &&
           !currentState.selectedModel &&
           !currentState.selectedProvider
         ) {
