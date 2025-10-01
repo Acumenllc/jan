@@ -452,7 +452,6 @@ export const useChat = () => {
       usePrompt.getState().setPrompt('')
       const selectedModel = useModelProvider.getState().selectedModel
 
-      // Declare accumulatedTextRef BEFORE try block so it's accessible in catch block
       // If continuing, start with the previous content
       const accumulatedTextRef = {
         value: continueFromMessage?.content?.[0]?.text?.value || ''
