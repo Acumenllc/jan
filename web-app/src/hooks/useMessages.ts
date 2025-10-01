@@ -8,6 +8,7 @@ type MessageState = {
   getMessages: (threadId: string) => ThreadMessage[]
   setMessages: (threadId: string, messages: ThreadMessage[]) => void
   addMessage: (message: ThreadMessage) => void
+  updateMessage: (message: ThreadMessage) => void
   deleteMessage: (threadId: string, messageId: string) => void
   clearAllMessages: () => void
 }
@@ -55,6 +56,36 @@ export const useMessages = create<MessageState>()((set, get) => ({
     // Persist to storage asynchronously
     getServiceHub().messages().createMessage(newMessage).catch((error) => {
       console.error('Failed to persist message:', error)
+    })
+  },
+  updateMessage: (message) => {
+    const assistants = useAssistant.getState().assistants
+    const currentAssistant = useAssistant.getState().currentAssistant
+
+    const selectedAssistant =
+      assistants.find((a) => a.id === currentAssistant?.id) || assistants[0]
+
+    const updatedMessage = {
+      ...message,
+      metadata: {
+        ...message.metadata,
+        assistant: selectedAssistant,
+      },
+    }
+
+    // Optimistically update state immediately for instant UI feedback
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [message.thread_id]: (state.messages[message.thread_id] || []).map((m) =>
+          m.id === message.id ? updatedMessage : m
+        ),
+      },
+    }))
+
+    // Persist to storage asynchronously
+    getServiceHub().messages().createMessage(updatedMessage).catch((error) => {
+      console.error('Failed to persist message update:', error)
     })
   },
   deleteMessage: (threadId, messageId) => {
