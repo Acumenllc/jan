@@ -83,8 +83,9 @@ export const useMessages = create<MessageState>()((set, get) => ({
       },
     }))
 
-    // Persist to storage asynchronously
-    getServiceHub().messages().createMessage(updatedMessage).catch((error) => {
+    // Persist to storage asynchronously using modifyMessage instead of createMessage
+    // to prevent duplicates when updating existing messages
+    getServiceHub().messages().modifyMessage(updatedMessage).catch((error) => {
       console.error('Failed to persist message update:', error)
     })
   },
