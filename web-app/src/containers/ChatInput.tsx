@@ -179,7 +179,6 @@ const ChatInput = ({
   const mcpExtension = extensionManager.get<MCPExtension>(ExtensionTypeEnum.MCP)
   const MCPToolComponent = mcpExtension?.getToolComponent?.()
 
-
   const handleSendMesage = (prompt: string) => {
     if (!selectedModel) {
       setMessage('Please select a model to start chatting.')

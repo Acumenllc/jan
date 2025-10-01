@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom'
 import { usePrompt } from './usePrompt'
 import { useModelProvider } from './useModelProvider'
 import { useThreads } from './useThreads'
-import { useAppState } from './useAppState'
+import { useAppState, type PromptProgress } from './useAppState'
 import { useMessages } from './useMessages'
 import { useRouter } from '@tanstack/react-router'
 import { defaultModel } from '@/lib/models'
@@ -23,7 +23,7 @@ import {
   ChatCompletionMessageToolCall,
   CompletionUsage,
 } from 'openai/resources'
-import { MessageStatus, ContentType } from '@janhq/core'
+import { MessageStatus, ContentType, ThreadMessage } from '@janhq/core'
 
 import { useServiceHub } from '@/hooks/useServiceHub'
 import { useToolApproval } from '@/hooks/useToolApproval'
@@ -74,7 +74,7 @@ const finalizeMessage = (
   finalContent: ThreadMessage,
   addMessage: (message: ThreadMessage) => void,
   updateStreamingContent: (content: ThreadMessage | undefined) => void,
-  updatePromptProgress: (progress: unknown) => void,
+  updatePromptProgress: (progress: PromptProgress | undefined) => void,
   updateThreadTimestamp: (threadId: string) => void,
   updateMessage?: (message: ThreadMessage) => void,
   continueFromMessageId?: string
@@ -102,7 +102,7 @@ const processStreamingCompletion = async (
   updateStreamingContent: (content: ThreadMessage | undefined) => void,
   updateTokenSpeed: (message: ThreadMessage, increment?: number) => void,
   setTokenSpeed: (message: ThreadMessage, tokensPerSecond: number, totalTokens: number) => void,
-  updatePromptProgress: (progress: unknown) => void,
+  updatePromptProgress: (progress: PromptProgress | undefined) => void,
   timeToFirstToken: number,
   tokenUsageRef: { current: CompletionUsage | undefined },
   continueFromMessageId?: string,
@@ -475,7 +475,7 @@ export const useChat = () => {
       const accumulatedTextRef = {
         value: continueFromMessage?.content?.[0]?.text?.value || ''
       }
-      let currentAssistant: Assistant | undefined
+      let currentAssistant: Assistant | undefined | null
 
       try {
         if (selectedModel?.id) {

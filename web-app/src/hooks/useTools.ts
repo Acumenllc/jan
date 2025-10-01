@@ -23,8 +23,9 @@ export const useTools = () => {
         updateTools(data)
 
         // Initialize default disabled tools for new users (only once)
-        if (!isDefaultsInitialized() && data.length > 0 && mcpExtension?.getDefaultDisabledTools) {
-          const defaultDisabled = await mcpExtension.getDefaultDisabledTools()
+        const mcpExt = mcpExtension as MCPExtension & { getDefaultDisabledTools?: () => Promise<string[]> }
+        if (!isDefaultsInitialized() && data.length > 0 && mcpExt?.getDefaultDisabledTools) {
+          const defaultDisabled = await mcpExt.getDefaultDisabledTools()
           if (defaultDisabled.length > 0) {
             setDefaultDisabledTools(defaultDisabled)
             markDefaultsAsInitialized()
