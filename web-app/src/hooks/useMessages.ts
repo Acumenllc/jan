@@ -40,16 +40,21 @@ export const useMessages = create<MessageState>()((set, get) => ({
         assistant: selectedAssistant,
       },
     }
-    getServiceHub().messages().createMessage(newMessage).then((createdMessage) => {
-      set((state) => ({
-        messages: {
-          ...state.messages,
-          [message.thread_id]: [
-            ...(state.messages[message.thread_id] || []),
-            createdMessage,
-          ],
-        },
-      }))
+
+    // Optimistically update state immediately for instant UI feedback
+    set((state) => ({
+      messages: {
+        ...state.messages,
+        [message.thread_id]: [
+          ...(state.messages[message.thread_id] || []),
+          newMessage,
+        ],
+      },
+    }))
+
+    // Persist to storage asynchronously
+    getServiceHub().messages().createMessage(newMessage).catch((error) => {
+      console.error('Failed to persist message:', error)
     })
   },
   deleteMessage: (threadId, messageId) => {
