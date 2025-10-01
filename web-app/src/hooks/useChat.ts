@@ -19,7 +19,10 @@ import {
 } from '@/lib/completion'
 import { CompletionMessagesBuilder } from '@/lib/messages'
 import { renderInstructions } from '@/lib/instructionTemplate'
-import { ChatCompletionMessageToolCall } from 'openai/resources'
+import {
+  ChatCompletionMessageToolCall,
+  CompletionUsage,
+} from 'openai/resources'
 import { MessageStatus, ContentType } from '@janhq/core'
 
 import { useServiceHub } from '@/hooks/useServiceHub'
@@ -98,7 +101,10 @@ const processStreamingCompletion = async (
   currentCall: ChatCompletionMessageToolCall | null,
   updateStreamingContent: (content: ThreadMessage | undefined) => void,
   updateTokenSpeed: (message: ThreadMessage, increment?: number) => void,
+  setTokenSpeed: (message: ThreadMessage, tokensPerSecond: number, totalTokens: number) => void,
   updatePromptProgress: (progress: unknown) => void,
+  timeToFirstToken: number,
+  tokenUsageRef: { current: CompletionUsage | undefined },
   continueFromMessageId?: string,
   updateMessage?: (message: ThreadMessage) => void,
   continueFromMessage?: ThreadMessage
@@ -128,7 +134,14 @@ const processStreamingCompletion = async (
       updateStreamingContent(currentContent)
     }
 
-    if (pendingDeltaCount > 0) {
+    if (tokenUsageRef.current) {
+      setTokenSpeed(
+        currentContent,
+        tokenUsageRef.current.completion_tokens /
+          Math.max((Date.now() - timeToFirstToken) / 1000, 1),
+        tokenUsageRef.current.completion_tokens
+      )
+    } else if (pendingDeltaCount > 0) {
       updateTokenSpeed(currentContent, pendingDeltaCount)
     }
     pendingDeltaCount = 0
@@ -183,6 +196,10 @@ const processStreamingCompletion = async (
         )
       }
 
+      if ('usage' in part && part.usage) {
+        tokenUsageRef.current = part.usage
+      }
+
       if (part.choices[0]?.delta?.tool_calls) {
         extractToolCall(part, currentCall, toolCalls)
         // Schedule a flush to reflect tool update
@@ -221,6 +238,7 @@ export const useChat = () => {
     updateStreamingContent,
     updateLoadingModel,
     setAbortController,
+    setTokenSpeed,
   ] = useAppState(
     useShallow((state) => [
       state.updateTokenSpeed,
@@ -228,6 +246,7 @@ export const useChat = () => {
       state.updateStreamingContent,
       state.updateLoadingModel,
       state.setAbortController,
+      state.setTokenSpeed,
     ])
   )
   const updatePromptProgress = useAppState(
@@ -541,10 +560,18 @@ export const useChat = () => {
           if (!completion) throw new Error('No completion received')
           const currentCall: ChatCompletionMessageToolCall | null = null
           const toolCalls: ChatCompletionMessageToolCall[] = []
+          const timeToFirstToken = Date.now()
+          let tokenUsage: CompletionUsage | undefined = undefined
           try {
             if (isCompletionResponse(completion)) {
               const message = completion.choices[0]?.message
-              accumulatedTextRef.value = (message?.content as string) || ''
+              // When continuing, append to existing content; otherwise replace
+              const newContent = (message?.content as string) || ''
+              if (continueFromMessageId && accumulatedTextRef.value) {
+                accumulatedTextRef.value += newContent
+              } else {
+                accumulatedTextRef.value = newContent
+              }
 
               // Handle reasoning field if there is one
               const reasoning = extractReasoningFromMessage(message)
@@ -556,7 +583,11 @@ export const useChat = () => {
               if (message?.tool_calls) {
                 toolCalls.push(...message.tool_calls)
               }
+              if ('usage' in completion) {
+                tokenUsage = completion.usage
+              }
             } else {
+              const tokenUsageRef = { current: tokenUsage }
               await processStreamingCompletion(
                 completion,
                 abortController,
@@ -566,11 +597,15 @@ export const useChat = () => {
                 currentCall,
                 updateStreamingContent,
                 updateTokenSpeed,
+                setTokenSpeed,
                 updatePromptProgress,
+                timeToFirstToken,
+                tokenUsageRef,
                 continueFromMessageId,
                 updateMessage,
                 continueFromMessage
               )
+              tokenUsage = tokenUsageRef.current
             }
           } catch (error) {
             const errorMessage =
@@ -797,6 +832,7 @@ export const useChat = () => {
       allowAllMCPPermissions,
       showApprovalModal,
       updateTokenSpeed,
+      setTokenSpeed,
       showIncreaseContextSizeModal,
       increaseModelContextSize,
       toggleOnContextShifting,

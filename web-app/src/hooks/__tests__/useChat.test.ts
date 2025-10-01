@@ -1,20 +1,30 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { useChat } from '../useChat'
-import * as completionLib from '@/lib/completion'
-import * as messagesLib from '@/lib/messages'
 import { MessageStatus, ContentType } from '@janhq/core'
 
-// Store mock functions for assertions
-let mockAddMessage: ReturnType<typeof vi.fn>
-let mockUpdateMessage: ReturnType<typeof vi.fn>
-let mockGetMessages: ReturnType<typeof vi.fn>
-let mockStartModel: ReturnType<typeof vi.fn>
-let mockSendCompletion: ReturnType<typeof vi.fn>
-let mockPostMessageProcessing: ReturnType<typeof vi.fn>
-let mockCompletionMessagesBuilder: any
-let mockSetPrompt: ReturnType<typeof vi.fn>
-let mockResetTokenSpeed: ReturnType<typeof vi.fn>
+// Store mock functions for assertions - initialize immediately
+const mockAddMessage = vi.fn()
+const mockUpdateMessage = vi.fn()
+const mockGetMessages = vi.fn(() => [])
+const mockStartModel = vi.fn(() => Promise.resolve())
+const mockSendCompletion = vi.fn(() => Promise.resolve({
+  choices: [{
+    message: {
+      content: 'AI response',
+      role: 'assistant',
+    },
+  }],
+}))
+const mockPostMessageProcessing = vi.fn((toolCalls, builder, content) =>
+  Promise.resolve(content)
+)
+const mockCompletionMessagesBuilder = {
+  addUserMessage: vi.fn(),
+  addAssistantMessage: vi.fn(),
+  getMessages: vi.fn(() => []),
+}
+const mockSetPrompt = vi.fn()
+const mockResetTokenSpeed = vi.fn()
 
 // Mock dependencies
 vi.mock('../usePrompt', () => ({
@@ -231,12 +241,12 @@ vi.mock('@/lib/completion', () => ({
   extractToolCall: vi.fn(),
   newUserThreadContent: vi.fn((threadId, content) => ({
     thread_id: threadId,
-    content: [{ type: ContentType.Text, text: { value: content, annotations: [] } }],
+    content: [{ type: 'text', text: { value: content, annotations: [] } }],
     role: 'user'
   })),
   newAssistantThreadContent: vi.fn((threadId, content) => ({
     thread_id: threadId,
-    content: [{ type: ContentType.Text, text: { value: content, annotations: [] } }],
+    content: [{ type: 'text', text: { value: content, annotations: [] } }],
     role: 'assistant'
   })),
   sendCompletion: mockSendCompletion,
@@ -274,33 +284,37 @@ vi.mock('sonner', () => ({
   },
 }))
 
+// Import after mocks to avoid hoisting issues
+const { useChat } = await import('../useChat')
+const completionLib = await import('@/lib/completion')
+const messagesLib = await import('@/lib/messages')
+
 describe('useChat', () => {
   beforeEach(() => {
-    // Reset all mocks
-    mockAddMessage = vi.fn()
-    mockUpdateMessage = vi.fn()
-    mockGetMessages = vi.fn(() => [])
-    mockStartModel = vi.fn(() => Promise.resolve())
-    mockSetPrompt = vi.fn()
-    mockResetTokenSpeed = vi.fn()
-    mockSendCompletion = vi.fn(() => Promise.resolve({
+    // Clear mock call history
+    vi.clearAllMocks()
+
+    // Reset mock implementations
+    mockAddMessage.mockClear()
+    mockUpdateMessage.mockClear()
+    mockGetMessages.mockReturnValue([])
+    mockStartModel.mockResolvedValue(undefined)
+    mockSetPrompt.mockClear()
+    mockResetTokenSpeed.mockClear()
+    mockSendCompletion.mockResolvedValue({
       choices: [{
         message: {
           content: 'AI response',
           role: 'assistant',
         },
       }],
-    }))
-    mockPostMessageProcessing = vi.fn((toolCalls, builder, content) =>
+    })
+    mockPostMessageProcessing.mockImplementation((toolCalls, builder, content) =>
       Promise.resolve(content)
     )
-    mockCompletionMessagesBuilder = {
-      addUserMessage: vi.fn(),
-      addAssistantMessage: vi.fn(),
-      getMessages: vi.fn(() => []),
-    }
-
-    vi.clearAllMocks()
+    mockCompletionMessagesBuilder.addUserMessage.mockClear()
+    mockCompletionMessagesBuilder.addAssistantMessage.mockClear()
+    mockCompletionMessagesBuilder.getMessages.mockReturnValue([])
   })
 
   afterEach(() => {
@@ -344,7 +358,7 @@ describe('useChat', () => {
         id: 'msg-123',
         thread_id: 'test-thread',
         role: 'assistant',
-        content: [{ type: ContentType.Text, text: { value: 'Partial response', annotations: [] } }],
+        content: [{ type: 'text', text: { value: 'Partial response', annotations: [] } }],
         status: MessageStatus.Stopped,
         metadata: {},
       }
@@ -369,7 +383,7 @@ describe('useChat', () => {
         id: 'msg-123',
         thread_id: 'test-thread',
         role: 'assistant',
-        content: [{ type: ContentType.Text, text: { value: 'Partial response', annotations: [] } }],
+        content: [{ type: 'text', text: { value: 'Partial response', annotations: [] } }],
         status: MessageStatus.Stopped,
         metadata: {},
       }
@@ -393,13 +407,13 @@ describe('useChat', () => {
         id: 'msg-1',
         thread_id: 'test-thread',
         role: 'user',
-        content: [{ type: ContentType.Text, text: { value: 'Hello', annotations: [] } }],
+        content: [{ type: 'text', text: { value: 'Hello', annotations: [] } }],
       }
       const stoppedMessage = {
         id: 'msg-123',
         thread_id: 'test-thread',
         role: 'assistant',
-        content: [{ type: ContentType.Text, text: { value: 'Partial', annotations: [] } }],
+        content: [{ type: 'text', text: { value: 'Partial', annotations: [] } }],
         status: MessageStatus.Stopped,
       }
       mockGetMessages.mockReturnValue([userMsg, stoppedMessage])
@@ -423,7 +437,7 @@ describe('useChat', () => {
         id: 'msg-123',
         thread_id: 'test-thread',
         role: 'assistant',
-        content: [{ type: ContentType.Text, text: { value: 'Partial', annotations: [] } }],
+        content: [{ type: 'text', text: { value: 'Partial', annotations: [] } }],
         status: MessageStatus.Stopped,
         metadata: {},
       }
@@ -450,7 +464,7 @@ describe('useChat', () => {
         id: 'msg-123',
         thread_id: 'test-thread',
         role: 'assistant',
-        content: [{ type: ContentType.Text, text: { value: 'Partial response', annotations: [] } }],
+        content: [{ type: 'text', text: { value: 'Partial response', annotations: [] } }],
         status: MessageStatus.Stopped,
         metadata: {},
       }
@@ -520,7 +534,7 @@ describe('useChat', () => {
         id: 'msg-123',
         thread_id: 'test-thread',
         role: 'assistant',
-        content: [{ type: ContentType.Text, text: { value: 'Partial', annotations: [] } }],
+        content: [{ type: 'text', text: { value: 'Partial', annotations: [] } }],
         status: MessageStatus.Stopped,
         metadata: {},
       }
@@ -563,7 +577,7 @@ describe('useChat', () => {
         id: 'msg-123',
         thread_id: 'test-thread',
         role: 'assistant',
-        content: [{ type: ContentType.Text, text: { value: 'Partial', annotations: [] } }],
+        content: [{ type: 'text', text: { value: 'Partial', annotations: [] } }],
         status: MessageStatus.Stopped,
         metadata: {},
       }
