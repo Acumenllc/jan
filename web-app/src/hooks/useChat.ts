@@ -791,6 +791,7 @@ export const useChat = () => {
       updateStreamingContent,
       updatePromptProgress,
       addMessage,
+      updateMessage,
       updateThreadTimestamp,
       updateLoadingModel,
       getDisabledToolsForThread,
