@@ -284,7 +284,7 @@ export const useChat = () => {
   const setModelLoadError = useModelLoad((state) => state.setModelLoadError)
   const router = useRouter()
 
-  const getCurrentThread = useCallback(async () => {
+  const getCurrentThread = useCallback(async (projectId?: string) => {
     let currentThread = retrieveThread()
 
     // Check if we're in temporary chat mode
@@ -303,6 +303,19 @@ export const useChat = () => {
       const selectedModel = useModelProvider.getState().selectedModel
       const selectedProvider = useModelProvider.getState().selectedProvider
 
+      // Get project metadata if projectId is provided
+      let projectMetadata: { id: string; name: string; updated_at: number } | undefined
+      if (projectId) {
+        const project = await serviceHub.projects().getProjectById(projectId)
+        if (project) {
+          projectMetadata = {
+            id: project.id,
+            name: project.name,
+            updated_at: project.updated_at,
+          }
+        }
+      }
+
       currentThread = await createThread(
         {
           id: selectedModel?.id ?? defaultModel(selectedProvider),
@@ -310,7 +323,7 @@ export const useChat = () => {
         },
         isTemporaryMode ? 'Temporary Chat' : currentPrompt,
         assistants.find((a) => a.id === currentAssistant?.id) || assistants[0],
-        undefined, // no project metadata
+        projectMetadata,
         isTemporaryMode // pass temporary flag
       )
 
@@ -330,7 +343,7 @@ export const useChat = () => {
       })
     }
     return currentThread
-  }, [createThread, retrieveThread, router, setMessages])
+  }, [createThread, retrieveThread, router, setMessages, serviceHub])
 
   const restartModel = useCallback(
     async (provider: ProviderObject, modelId: string) => {
@@ -445,9 +458,10 @@ export const useChat = () => {
         base64: string
         dataUrl: string
       }>,
+      projectId?: string,
       continueFromMessageId?: string
     ) => {
-      const activeThread = await getCurrentThread()
+      const activeThread = await getCurrentThread(projectId)
       const selectedProvider = useModelProvider.getState().selectedProvider
       let activeProvider = getProviderByName(selectedProvider)
 
