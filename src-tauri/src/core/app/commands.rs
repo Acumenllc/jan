@@ -93,7 +93,7 @@ pub fn get_jan_data_folder_path<R: Runtime>(app_handle: tauri::AppHandle<R>) -> 
 
 #[tauri::command]
 pub fn get_configuration_file_path<R: Runtime>(app_handle: tauri::AppHandle<R>) -> PathBuf {
-    let app_path = app_handle.path().app_data_dir().unwrap_or_else(|err| {
+    let app_path = app_handle.path().data_dir().unwrap_or_else(|err| {
         log::error!(
             "Failed to get app data directory: {}. Using home directory instead.",
             err
